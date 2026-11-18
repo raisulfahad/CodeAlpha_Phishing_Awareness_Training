@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phishing Awareness Quiz</title>
+<style>
+:root{--navy:#0b1f33;--teal:#16a39a;--red:#d62839;--green:#0a6b2e;--bg:#f6f8fb;--line:#dde4ec}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#1b2a3a;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.5}
+header{background:var(--navy);color:#fff;padding:22px 20px}
+header h1{margin:0;font-size:1.5rem}
+header p{margin:4px 0 0;color:#9fb6cc;font-size:.95rem}
+main{max-width:780px;margin:0 auto;padding:20px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:16px}
+.bar{height:8px;background:#e4eaf1;border-radius:6px;overflow:hidden;margin-bottom:6px}
+.bar div{height:100%;background:var(--teal);width:0;transition:width .3s}
+.meta{display:flex;justify-content:space-between;font-size:.85rem;color:#5b6d80;margin-bottom:14px}
+h2{margin:0 0 8px;font-size:1.25rem}
+.scenario{font-size:.98rem;color:#34475a;margin-bottom:10px}
+pre{background:var(--navy);color:#d5e6f7;padding:14px;border-radius:10px;overflow-x:auto;font-size:.85rem;line-height:1.6;margin:10px 0 14px;white-space:pre-wrap;word-break:break-word}
+.opts{display:grid;gap:10px}
+.opt{display:block;text-align:left;width:100%;background:#fff;border:2px solid var(--line);border-radius:10px;padding:12px 14px;font:inherit;cursor:pointer;color:inherit}
+.opt:hover:not(:disabled){border-color:var(--teal);background:#f2fbfa}
+.opt:focus-visible{outline:3px solid #1558d6;outline-offset:2px}
+.opt:disabled{cursor:default}
+.opt.correct{border-color:var(--green);background:#e6f7ec}
+.opt.wrong{border-color:var(--red);background:#fdeaec}
+.fb{margin-top:16px;padding:14px 16px;border-radius:10px;border-left:6px solid}
+.fb.good{background:#e6f7ec;border-color:var(--green)}
+.fb.bad{background:#fdeaec;border-color:var(--red)}
+.badge{display:inline-block;font-weight:700;font-size:.78rem;letter-spacing:.06em;padding:3px 10px;border-radius:20px;color:#fff;margin-bottom:6px}
+.badge.mal{background:var(--red)}.badge.safe{background:var(--green)}
+.fb ul{margin:8px 0 0;padding-left:20px}
+button.primary{background:var(--navy);color:#fff;border:0;border-radius:10px;padding:12px 22px;font:inherit;font-weight:600;cursor:pointer;margin-top:16px}
+button.primary:hover{background:#13395c}
+.score{font-size:3rem;font-weight:800;color:var(--navy);margin:0}
+.review li{margin:8px 0}
+.hidden{display:none}
+.tick{color:var(--green);font-weight:700}.cross{color:var(--red);font-weight:700}
+footer{text-align:center;color:#6f8093;font-size:.82rem;padding:10px 20px 30px}
+</style></head><body>
+<header><h1>🎣 Phishing Awareness Quiz</h1><p>8 scenarios. Decide what is safe and what is malicious. Every mock address and link below is fictional and not clickable.</p></header>
+<main>
+<section id="intro" class="card">
+<h2>Ready to test your instincts?</h2>
+<p>You'll see mock email headers, URLs and messages. Pick the best response, then read why it is safe or malicious. Aim for 7/8 or better.</p>
+<button class="primary" id="start">Start quiz</button>
+</section>
+<section id="quiz" class="hidden">
+<div class="bar"><div id="prog"></div></div>
+<div class="meta"><span id="qnum"></span><span id="qscore"></span></div>
+<div class="card" id="qcard" aria-live="polite"></div>
+</section>
+<section id="result" class="card hidden"></section>
+</main>
+<footer>Phishing Awareness Training · CodeAlpha Cybersecurity Internship · Task 2</footer>
+
+<script>
+const QUESTIONS = [
+{
+ title:"Who is this really from?",
+ scenario:"You receive this email. What is the best assessment?",
+ code:"From: \"Contoso Payroll\" <payroll@contoso.com>\nReply-To: payroll.helpdesk@mail-gmx.net\nSubject: Updated direct-deposit form required\n\nHello,\nPlease reply with your bank details to avoid payment delay.",
+ options:["the From address is our company domain.","Reply-To points to a different external domain, so replies go to the attacker.","it mentions payroll, which is relevant to me.","Malicious only if it contains an attachment."],
+ answer:1, verdict:"malicious",
+ explain:"The visible From can be spoofed, while Reply-To silently redirects your answer to an unrelated free-mail domain. Asking for bank details by reply is another red flag.",
+ tips:["Always compare From and Reply-To (hover or expand headers).","Never send financial details by email reply; use the official HR portal."]
+},
+{
+ title:"Spot the lookalike domain",
+ scenario:"A text says your package is held and gives this link. Which assessment is correct?",
+ code:"https://www.paypa1.com/resolve-payment",
+ options:["it has https and says PayPal.","the path says resolve-payment, so it is an official page.","\"paypa1\" uses the digit 1 instead of the letter l (typosquatting).","Cannot tell without clicking."],
+ answer:2, verdict:"malicious",
+ explain:"The domain is paypa1.com, not paypal.com. Attackers register near-identical names. HTTPS only encrypts the connection; it says nothing about who owns the site.",
+ tips:["Read the domain character by character.","Type the brand's address yourself or use a bookmark."]
+},
+{
+ title:"Which URL is the real sign-in?",
+ scenario:"Four links appear in different emails claiming to be from Microsoft. Which one actually belongs to Microsoft?",
+ code:"A) https://login.microsoftonline.com/\nB) https://login.microsoft.com.secure-verify.net/\nC) https://microsoft.com@signin-check.example/\nD) https://microsoft-login.support/",
+ options:["the registered domain is microsoftonline.com","it starts with login.microsoft.com","microsoft.com appears first","it contains the Microsoft name"],
+ answer:0, verdict:"safe",
+ explain:"Read the domain right to left from the first single slash. In B the real owner is secure-verify.net (a deceptive subdomain). In C everything before @ is ignored, so the host is signin-check.example. D is an unrelated domain using the brand as a word. Only A's registered domain, microsoftonline.com, is Microsoft's real sign-in domain.",
+ tips:["The owner is the part just before the TLD, right before the first /.","Brand name at the start of a URL means nothing."]
+},
+{
+ title:"Check the authentication results",
+ scenario:"An email claims to be from your bank. You open the full headers:",
+ code:"From: security@yourbank.com\nAuthentication-Results: mx.mail.example;\n  spf=fail smtp.mailfrom=bulk-sender.biz;\n  dkim=none;\n  dmarc=fail header.from=yourbank.com\nSubject: Verify your account now",
+ options:["From shows yourbank.com.","the subject mentions verification, which banks do.","SPF and DMARC fail and there's no DKIM signature, so yourbank.com did not authorise this sender.","Inconclusive: headers cannot reveal anything."],
+ answer:2, verdict:"malicious",
+ explain:"SPF failed (the sending server isn't authorised), DKIM is absent, and DMARC fails because the sender domain does not align with the From domain. Together they indicate the From address was forged. (Even a pass doesn't prove trustworthiness. Attackers can authenticate their own lookalike domains.)",
+ tips:["Look for spf/dkim/dmarc = pass AND alignment with the From domain.","Treat failures plus an urgent request as high risk."]
+},
+{
+ title:"The invisible lookalike",
+ scenario:"Your browser's address bar (or a security tool) shows this address for a link that looked like \"apple.com\" in an email:",
+ code:"https://xn--pple-43d.com/id/sign-in",
+ options:["it ends in .com and uses https.","\"xn--\" is punycode, meaning the name contains non-Latin lookalike characters (homograph attack).","punycode is how Apple hosts international sites.","Harmless unless I enter a password."],
+ answer:1, verdict:"malicious",
+ explain:"The xn-- prefix marks an internationalised domain. xn--pple-43d.com decodes to \"аpple.com\" where the first letter is Cyrillic \"а\", visually identical to Latin \"a\". It is a different domain from apple.com.",
+ tips:["If a familiar brand shows up as xn--..., don't proceed.","Password managers won't autofill on it, which is a useful warning."]
+},
+{
+ title:"The urgent request from the CEO",
+ scenario:"You work in accounts payable. This arrives from an address that looks like your CEO's:",
+ code:"From: \"Dana Whitfield\" <dana.whitfield@acmecorp-group.com>\nSubject: Confidential, handle today\n\nI'm in meetings and can't take calls. Wire $48,500 to the vendor below before 3pm and keep this between us. Will explain later.",
+ options:["Pay it. The CEO has authority and deadlines are real.","Reply to the email asking if it's really them.","Don't pay. Verify through a known phone number or chat and report it. Pressure, secrecy and \"can't talk\" are classic BEC signs.","Forward it to colleagues to see if they agree."],
+ answer:2, verdict:"malicious",
+ explain:"This is Business Email Compromise / CEO fraud. It combines authority, urgency and secrecy, and blocks the usual verification route. Replying to the same email just talks to the attacker, and the domain is a lookalike (acmecorp-group.com vs acmecorp.com).",
+ tips:["Verify payment requests out-of-band using contact details you already have.","Require dual approval for transfers and any change in bank details."]
+},
+{
+ title:"A genuine email, or not?",
+ scenario:"You just clicked \"Forgot password?\" on github.com a minute ago. This arrives:",
+ code:"From: GitHub <noreply@github.com>\nAuthentication-Results: spf=pass; dkim=pass header.d=github.com; dmarc=pass header.from=github.com\nSubject: [GitHub] Please reset your password\n\nYou asked to reset your password. Use the link below within 3 hours.\nhttps://github.com/password_reset/ab12cd34...",
+ options:["any password-reset email is phishing.","you initiated it, authentication passes and aligns, and the link goes to github.com. (Typing the address yourself is still the most cautious option.)","Malicious: it is automated and has no personal greeting.","Malicious: the link is too long."],
+ answer:1, verdict:"safe",
+ explain:"Not every email is phishing. The key is that it is expected (you just requested it), all authentication checks pass and align with the visible domain, and the link's real domain matches. Unsolicited resets you did NOT request are the suspicious ones.",
+ tips:["Ask: did I trigger this?","If unsure, go to the site directly and reset from there."]
+},
+{
+ title:"The page that won't autofill",
+ scenario:"You click a link in an email about a \"suspended\" bank account. The login page looks exactly like your bank's, but your password manager does not offer to fill your saved credentials.",
+ code:"Address bar: https://secure-yourbank-login.com/auth\nSaved login in password manager: https://www.yourbank.com",
+ options:["Type the password manually. Maybe the manager is glitching.","Treat it as phishing. Close the tab, and go to the bank via your bookmark or app. Report the email.","Try a different browser and enter the password there.","Enter a fake password first to test the site."],
+ answer:1, verdict:"malicious",
+ explain:"Password managers match the exact saved domain. A refusal to autofill is a strong signal that the site is not the real one. Typing the password manually, in any browser, hands it to the attacker, and even a wrong password can confirm a valid username.",
+ tips:["Treat \"won't autofill\" as a warning, never an inconvenience.","Phishing-resistant passkeys/FIDO2 add protection even if you're fooled."]
+}
+];
+
+const $ = id => document.getElementById(id);
+let cur = 0, score = 0, answers = [];
+
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function show(){
+  const q = QUESTIONS[cur];
+  $("prog").style.width = (cur/QUESTIONS.length*100)+"%";
+  $("qnum").textContent = "Question "+(cur+1)+" of "+QUESTIONS.length;
+  $("qscore").textContent = "Score: "+score;
+  $("qcard").innerHTML =
+    "<h2>"+esc(q.title)+"</h2>"+
+    "<p class='scenario'>"+esc(q.scenario)+"</p>"+
+    "<pre>"+esc(q.code)+"</pre>"+
+    "<div class='opts'>"+q.options.map((o,i)=>"<button class='opt' data-i='"+i+"'>"+String.fromCharCode(65+i)+". "+esc(o)+"</button>").join("")+"</div>"+
+    "<div id='fb'></div>";
+  document.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>pick(+b.dataset.i)));
+}
+
+function pick(i){
+  const q = QUESTIONS[cur], ok = i===q.answer;
+  if(ok) score++;
+  answers.push({ok, picked:i});
+  document.querySelectorAll(".opt").forEach((b,idx)=>{
+    b.disabled = true;
+    if(idx===q.answer) b.classList.add("correct");
+    else if(idx===i) b.classList.add("wrong");
+  });
+  $("qscore").textContent = "Score: "+score;
+  const last = cur===QUESTIONS.length-1;
+  $("fb").innerHTML =
+    "<div class='fb "+(ok?"good":"bad")+"'>"+
+    "<span class='badge "+(q.verdict==="safe"?"safe":"mal")+"'>"+(q.verdict==="safe"?"SAFE":"MALICIOUS")+"</span>"+
+    "<div><strong>"+(ok?"Correct. ":"Not quite. ")+"</strong>"+esc(q.explain)+"</div>"+
+    "<ul>"+q.tips.map(t=>"<li>"+esc(t)+"</li>").join("")+"</ul></div>"+
+    "<button class='primary' id='next'>"+(last?"See results":"Next question")+"</button>";
+  $("next").focus();
+  $("next").addEventListener("click",()=>{ if(last) finish(); else {cur++; show();} });
+}
+
+function finish(){
+  $("quiz").classList.add("hidden");
+  const pct = Math.round(score/QUESTIONS.length*100);
+  const msg = score>=7 ? "Excellent. You have a sharp eye for phishing." :
+              score>=5 ? "Good. Review the questions you missed below." :
+                         "Keep practising. Re-read the slide deck and try again.";
+  $("result").classList.remove("hidden");
+  $("result").innerHTML =
+    "<h2>Your result</h2><p class='score'>"+score+" / "+QUESTIONS.length+" <span style='font-size:1.2rem;color:#5b6d80'>("+pct+"%)</span></p>"+
+    "<p>"+msg+"</p><h2 style='margin-top:18px'>Review</h2><ol class='review'>"+
+    QUESTIONS.map((q,i)=>"<li><span class='"+(answers[i].ok?"tick'>✔":"cross'>✘")+"</span> "+esc(q.title)+" <em>("+(q.verdict==="safe"?"safe":"malicious")+")</em>"+
+      (answers[i].ok?"":"<br><small>Correct answer: "+String.fromCharCode(65+q.answer)+". "+esc(q.options[q.answer])+"</small>")+"</li>").join("")+
+    "</ol><button class='primary' id='again'>Try again</button>";
+  $("again").addEventListener("click",()=>{cur=0;score=0;answers=[];$("result").classList.add("hidden");$("quiz").classList.remove("hidden");show();});
+}
+
+$("start").addEventListener("click",()=>{$("intro").classList.add("hidden");$("quiz").classList.remove("hidden");show();});
+</script>
+</body></html>
