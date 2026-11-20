@@ -43,6 +43,5 @@ All addresses in the quiz and deck are fictional examples. Nothing in the quiz i
 - The 0ktapus summary is based on public reporting (Group-IB, 2022).
 - The BEC email is an illustrative scenario. Real-world BEC losses are referenced from public sources such as FBI IC3 reports, SEC filings and US DOJ releases.
 
-## Deploying with GitHub Pages
 
-Repository **Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `main` / `/ (root)`** → Save.
+Created by [MD Raisul Fahad](https://github.com/raisul06) ·
